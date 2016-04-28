@@ -28,12 +28,14 @@ type Space struct {
 }
 
 type Application struct {
-	Name   string `yaml:"name"`
-	Domain string `yaml:"domain"`
+	Name     string `yaml:"name"`
+	Hostname string `yaml:"hostname"`
+	Domain   string `yaml:"domain"`
 
 	Repository string `yaml:"repo"`
 	Path       string `yaml:"path"`
 	Image      string `yaml:"image"`
+	Buildpack  string `yaml:"buildpack"`
 
 	Memory    string `yaml:"memory"`
 	Disk      string `yaml:"disk"`

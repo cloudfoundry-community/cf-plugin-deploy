@@ -12,7 +12,7 @@ users:
 organizations:
   StarkAndWayne:
     users:
-      joe: [OrgDeveloper]
+      joe: [OrgManager]
 
     domains:
       - a.b.c.d
@@ -31,8 +31,9 @@ organizations:
 
         apps:
           - name: app1
+            hostname: lattice
             domain: local.x.y.z
-            repo: https://github.com/
+            repo: https://github.com/cloudfoundry-samples/lattice-app
             memory: 256m
             disk: 1g
             instances: 2
