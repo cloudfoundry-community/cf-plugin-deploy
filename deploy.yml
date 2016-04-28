@@ -1,0 +1,16 @@
+deploy:
+  - name: api
+    image: docker.example.com/app/api
+    bind:
+      - rabbitmq/basic
+      - postgres/basic
+  - name: web
+    image: docker.example.com/app/web
+    bind:
+      - rabbitmq/basic
+
+  - name: cache
+    image: docker.example.com/app/cache
+    bind:
+      - rabbitmq/basic
+      - postgres/basic
