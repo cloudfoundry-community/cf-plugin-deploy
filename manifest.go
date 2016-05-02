@@ -37,9 +37,10 @@ type Application struct {
 	Image      string `yaml:"image"`
 	Buildpack  string `yaml:"buildpack"`
 
-	Memory    string `yaml:"memory"`
-	Disk      string `yaml:"disk"`
-	Instances int    `yaml:"instances"`
+	Memory      string            `yaml:"memory"`
+	Disk        string            `yaml:"disk"`
+	Instances   int               `yaml:"instances"`
+	Environment map[string]string `yaml:"env"`
 
 	BoundServices  map[string]string `yaml:"bind"`
 	SharedServices []string          `yaml:"shared"`

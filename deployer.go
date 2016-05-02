@@ -219,6 +219,10 @@ func (d *Deployer) stageApp(app Application) error {
 	return d.run(args...)
 }
 
+func (d *Deployer) setEnvVar(name, value, app string) error {
+	return d.run("set-env", app, name, value)
+}
+
 func (d *Deployer) startApp(app Application) error {
 	return d.run("start", app.Name)
 }
@@ -334,6 +338,13 @@ func (d *Deployer) Deploy() error {
 
 				if err := d.stageApp(app); err != nil {
 					return err
+				}
+
+				for ename, value := range app.Environment {
+					fmt.Printf("      setting environment variable $%s\n", ename)
+					if err := d.setEnvVar(ename, value, app.Name); err != nil {
+						return err
+					}
 				}
 
 				for svname, service := range app.BoundServices {

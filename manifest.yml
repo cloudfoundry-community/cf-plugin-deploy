@@ -37,6 +37,8 @@ organizations:
             memory: 256m
             disk: 1g
             instances: 2
+            env:
+              HOME: /tmp
             shared:
               - mqbus
             bind:
