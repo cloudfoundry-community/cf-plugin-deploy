@@ -19,6 +19,11 @@ func parseService(s string) (string, string) {
 	return x[0], x[1]
 }
 
+func boolify(s string) bool {
+	s = strings.ToLower(s)
+	return s == "yes" || s == "y" || s == "on" || s == "enabled"
+}
+
 type Deployer struct {
 	manifest *Manifest
 	cf       plugin.CliConnection
@@ -139,6 +144,13 @@ func (d *Deployer) createSpace(org, space string) error {
 	}
 
 	return nil
+}
+
+func (d *Deployer) enableSSH(space string, on bool) error {
+	if on {
+		return d.run("allow-space-ssh", space)
+	}
+	return d.run("disallow-space-ssh", space)
 }
 
 func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
@@ -331,8 +343,17 @@ func (d *Deployer) Deploy() error {
 				return err
 			}
 
-			fmt.Printf("    setting ssh-enabled to '%s'\n", space.SSH)
-			fmt.Printf("    using default domain of '%s'\n", space.Domain)
+			if space.SSH != "" {
+				fmt.Printf("    setting ssh-enabled to '%s'\n", space.SSH)
+				if err := d.enableSSH(sname, boolify(space.SSH)); err != nil {
+					return err
+				}
+			}
+
+			if space.Domain != "" {
+				fmt.Printf("    using default domain of '%s'\n", space.Domain)
+			}
+
 			for uname, roles := range space.Users {
 				fmt.Printf("    granting space-level access to user '%s'\n", uname)
 				if err := d.createUser(uname); err != nil {

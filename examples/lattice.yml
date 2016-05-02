@@ -17,6 +17,7 @@ organizations:
 
     spaces:
       Lattice:
+        ssh: yes
         domain: bosh-lite.com
         users:
           long: [SpaceDeveloper]
