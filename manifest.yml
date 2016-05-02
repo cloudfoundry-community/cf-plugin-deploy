@@ -18,13 +18,18 @@ organizations:
       - a.b.c.d
       - local.x.y.z
 
+    env:
+      ORGANZATION: Stark & Wayne
+
     spaces:
-      ZipcarDev:
+      Dev:
         ssh: allowed
         domain: a.b.c.d
         users:
           joe: [SpaceDeveloper]
           jhunt: [SpaceManager]
+        env:
+          RUN_MODE: development
 
         services:
           mqbus: rabbitmq/basic

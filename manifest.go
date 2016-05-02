@@ -14,15 +14,17 @@ type User struct {
 }
 
 type Organization struct {
-	Users   map[string][]string `yaml:"users"`
-	Domains []string            `yaml:"domains"`
-	Spaces  map[string]*Space   `yaml:"spaces"`
+	Users       map[string][]string `yaml:"users"`
+	Domains     []string            `yaml:"domains"`
+	Environment map[string]string   `yaml:"env"`
+	Spaces      map[string]*Space   `yaml:"spaces"`
 }
 
 type Space struct {
 	SSH            string              `yaml:"ssh"`
 	Domain         string              `yaml:"domain"`
 	Users          map[string][]string `yaml:"users"`
+	Environment    map[string]string   `yaml:"env"`
 	SharedServices map[string]string   `yaml:"services"`
 	Applications   []*Application      `yaml:"apps"`
 }
@@ -98,6 +100,18 @@ func ParseManifest(src io.Reader) (Manifest, error) {
 					services[svc] = bind
 				}
 				app.BoundServices = services
+
+				env := map[string]string{}
+				for k, v := range org.Environment {
+					env[k] = v
+				}
+				for k, v := range space.Environment {
+					env[k] = v
+				}
+				for k, v := range app.Environment {
+					env[k] = v
+				}
+				app.Environment = env
 			}
 
 		}
