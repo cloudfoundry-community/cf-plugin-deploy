@@ -1,0 +1,32 @@
+---
+organizations:
+  Lattice:
+    spaces:
+      Lattice:
+        domain: bosh-lite.com
+        apps:
+          - name: postgres-broker
+            repo: https://github.com/cloudfoundry-community/worlds-simplest-service-broker
+            instances: 1
+            env:
+              BASE_GUID: E0CF1F47-AF6F-435A-BB3E-6DF5BC572527
+              SERVICE_NAME: postgres
+              SERVICE_PLAN: free
+              CREDENTIALS:  '{"ha":"haha"}'
+              TAGS: db,awesome
+            # then run:
+            #   cf create-service-broker postgres admin admin https://postgres-broker.bosh-lite.com
+            #   cf enable-service-access postgres
+
+          - name: rabbit-broker
+            repo: https://github.com/cloudfoundry-community/worlds-simplest-service-broker
+            instances: 1
+            env:
+              BASE_GUID: 4986B89F-AB7C-4E3A-8F70-B9F37CD829D7
+              SERVICE_NAME: rabbitmq
+              SERVICE_PLAN: shared
+              CREDENTIALS:  '{"ha":"hehehe"}'
+              TAGS: mq,not-so-awesome
+            # then run:
+            #   cf create-service-broker rabbitmq admin admin https://rabbit-broker.bosh-lite.com
+            #   cf enable-service-access rabbitmq

@@ -1,0 +1,72 @@
+---
+users:
+  - username: cweibel
+    password: t0pher
+
+  - username: long
+    password: loooong
+
+organizations:
+  Lattice:
+    env:
+      ORGANIZATION: L.A.T.T.I.C.E.
+      DEPLOYED_INSTANCE: 1
+
+    users:
+      cweibel: [OrgManager]
+
+    spaces:
+      Lattice:
+        domain: bosh-lite.com
+        users:
+          long: [SpaceDeveloper]
+          cweibel: [SpaceManager, SpaceAuditor]
+
+        env:
+          DESIGNATION: DEV
+
+        services:
+          mqbus: rabbitmq/shared
+
+#        apps:
+#          - name: ltc1
+#            urls:
+#              - ltc1
+#              - ltc-the-first
+#              - ltc.global.x.y.z
+#
+#            image: cloudfoundry/lattice-app
+#            memory: 256m
+#            disk: 2g
+#            instances: 3
+#            env:
+#              HELLO: WORLD
+#            shared:
+#              - mqbus
+#            bind:
+#              sessions: postgres/free
+#              datadb:   postgres/free
+#
+#          - name: ltc2
+#            hostname: l2
+#            image: cloudfoundry/lattice-app
+#            memory: 512m
+#            instances: 5
+#            env:
+#              DEPLOYED_INSTANCE: 2
+#            shared:
+#              - mqbus
+#            bind:
+#              sessions: postgres/free
+#              datadb:   postgres/free
+
+
+  NewOrg:
+    users:
+      long: [OrgManager]
+    spaces:
+      Space1: {}
+      Space2: {}
+      Space3: {}
+      Space4: {}
+      Space5: {}
