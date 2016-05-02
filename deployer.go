@@ -69,9 +69,9 @@ func (d *Deployer) createSharedDomain(domain string) error {
 }
 
 func (d *Deployer) createOrg(org string) error {
-	_, err := d.cf.GetOrg(org)
-	if err == nil || !isMissing(err) {
-		return err
+	o, _ := d.cf.GetOrg(org)
+	if o.Guid != "" {
+		return nil
 	}
 
 	if err := d.run("create-org", org); err != nil {
