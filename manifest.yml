@@ -36,6 +36,10 @@ organizations:
 
         apps:
           - name: app1
+            urls:
+              - lattice.bosh-lite.com
+              - lattice-x # implicit domain
+              - tcp-port.bosh-lite.com:9099/path
             hostname: lattice
             domain: local.x.y.z
             repo: https://github.com/cloudfoundry-samples/lattice-app

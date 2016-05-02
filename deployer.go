@@ -219,6 +219,48 @@ func (d *Deployer) stageApp(app *Application) error {
 	return d.run(args...)
 }
 
+func (d *Deployer) mapURLs(app *Application) error {
+	a, err := d.cf.GetApp(app.Name)
+	if err != nil {
+		return err
+	}
+
+	want := map[string]URL{}
+	for _, s := range app.URLs {
+		url := ParseURL(s, app.Domain)
+		want[url.String()] = url
+	}
+
+	have := map[string]URL{}
+	for _, r := range a.Routes {
+		url := URL{
+			Host: r.Host,
+			Domain: r.Domain.Name,
+		}
+
+		if _, ok := want[url.String()]; ok {
+			delete(want, url.String())
+		} else {
+			have[url.String()] = url
+		}
+	}
+
+	for u, url := range have {
+		fmt.Printf("    unmapping route %s\n", u)
+		if err := d.run("unmap-route", app.Name, url.Domain, "--hostname", url.Host); err != nil {
+			return err
+		}
+	}
+	for u, url := range want {
+		fmt.Printf("    mapping route %s\n", u)
+		if err := d.run("map-route", app.Name, url.Domain, "--hostname", url.Host); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (d *Deployer) setEnvVar(name, value, app string) error {
 	return d.run("set-env", app, name, value)
 }
@@ -338,6 +380,12 @@ func (d *Deployer) Deploy() error {
 
 				if err := d.stageApp(app); err != nil {
 					return err
+				}
+
+				if len(app.URLs) > 0 {
+					if err := d.mapURLs(app); err != nil {
+						return err
+					}
 				}
 
 				for ename, value := range app.Environment {

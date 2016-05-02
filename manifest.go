@@ -4,9 +4,37 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
+
+type URL struct {
+	Host   string
+	Domain string
+}
+
+func ParseURL(s, domain string) URL {
+	if strings.ContainsRune(s, '.') {
+		p := strings.SplitN(s, ".", 2)
+		return URL{
+			Host:   p[0],
+			Domain: p[1],
+		}
+	}
+
+	return URL{
+		Host:   s,
+		Domain: domain,
+	}
+}
+
+func (u URL) String() string {
+	if u.Domain == "" {
+		return u.Host
+	}
+	return fmt.Sprintf("%s.%s", u.Host, u.Domain)
+}
 
 type User struct {
 	Name     string `yaml:"username"`
@@ -30,9 +58,10 @@ type Space struct {
 }
 
 type Application struct {
-	Name     string `yaml:"name"`
-	Hostname string `yaml:"hostname"`
-	Domain   string `yaml:"domain"`
+	Name     string   `yaml:"name"`
+	Hostname string   `yaml:"hostname"`
+	Domain   string   `yaml:"domain"`
+	URLs     []string `yaml:"urls"`
 
 	Repository string `yaml:"repo"`
 	Path       string `yaml:"path"`
@@ -81,6 +110,12 @@ func ParseManifest(src io.Reader) (Manifest, error) {
 					m.Organizations[o].Spaces[s].Applications[a].Instances = 1
 				}
 
+				/* if we have a hostname or domain, *and* URLs,
+				   we need to throw an error. */
+				if (app.Domain != "" || app.Hostname != "") && len(app.URLs) > 0 {
+					return m, fmt.Errorf("Both hostname/domain and list of urls specified -- this is not allowed")
+				}
+
 				/* use the default domain for the space, if present */
 				if space.Domain != "" && app.Domain == "" {
 					m.Organizations[o].Spaces[s].Applications[a].Domain = space.Domain
@@ -113,7 +148,6 @@ func ParseManifest(src io.Reader) (Manifest, error) {
 				}
 				app.Environment = env
 			}
-
 		}
 	}
 
