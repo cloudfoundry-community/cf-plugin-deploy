@@ -234,7 +234,7 @@ func (d *Deployer) mapURLs(app *Application) error {
 	have := map[string]URL{}
 	for _, r := range a.Routes {
 		url := URL{
-			Host: r.Host,
+			Host:   r.Host,
 			Domain: r.Domain.Name,
 		}
 
