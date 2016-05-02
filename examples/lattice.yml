@@ -28,37 +28,37 @@ organizations:
         services:
           mqbus: rabbitmq/shared
 
-#        apps:
-#          - name: ltc1
-#            urls:
-#              - ltc1
-#              - ltc-the-first
-#              - ltc.global.x.y.z
-#
-#            image: cloudfoundry/lattice-app
-#            memory: 256m
-#            disk: 2g
-#            instances: 3
-#            env:
-#              HELLO: WORLD
-#            shared:
-#              - mqbus
-#            bind:
-#              sessions: postgres/free
-#              datadb:   postgres/free
-#
-#          - name: ltc2
-#            hostname: l2
-#            image: cloudfoundry/lattice-app
-#            memory: 512m
-#            instances: 5
-#            env:
-#              DEPLOYED_INSTANCE: 2
-#            shared:
-#              - mqbus
-#            bind:
-#              sessions: postgres/free
-#              datadb:   postgres/free
+        apps:
+          - name: ltc1
+            urls:
+              - ltc1
+              - ltc-the-first
+              - ltc.global.x.y.z
+
+            image: cloudfoundry/lattice-app
+            memory: 256m
+            disk: 2g
+            instances: 3
+            env:
+              HELLO: WORLD
+            shared:
+              - mqbus
+            bind:
+              sessions: postgres/free
+              datadb:   postgres/free
+
+          - name: ltc2
+            hostname: l2
+            image: cloudfoundry/lattice-app
+            memory: 512m
+            instances: 5
+            env:
+              DEPLOYED_INSTANCE: 2
+            shared:
+              - mqbus
+            bind:
+              sessions: postgres/free
+              datadb:   postgres/free
 
 
   NewOrg:
