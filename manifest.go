@@ -16,7 +16,7 @@ type User struct {
 type Organization struct {
 	Users   map[string][]string `yaml:"users"`
 	Domains []string            `yaml:"domains"`
-	Spaces  map[string]Space    `yaml:"spaces"`
+	Spaces  map[string]*Space   `yaml:"spaces"`
 }
 
 type Space struct {
@@ -24,7 +24,7 @@ type Space struct {
 	Domain         string              `yaml:"domain"`
 	Users          map[string][]string `yaml:"users"`
 	SharedServices map[string]string   `yaml:"services"`
-	Applications   []Application       `yaml:"apps"`
+	Applications   []*Application      `yaml:"apps"`
 }
 
 type Application struct {
@@ -47,9 +47,9 @@ type Application struct {
 }
 
 type Manifest struct {
-	Domains       []string                `yaml:"domains"`
-	Users         []User                  `yaml:"users"`
-	Organizations map[string]Organization `yaml:"organizations"`
+	Domains       []string                 `yaml:"domains"`
+	Users         []User                   `yaml:"users"`
+	Organizations map[string]*Organization `yaml:"organizations"`
 }
 
 func ParseManifest(src io.Reader) (Manifest, error) {
@@ -67,6 +67,12 @@ func ParseManifest(src io.Reader) (Manifest, error) {
 	/* resolve out the defaults */
 	for o, org := range m.Organizations {
 		for s, space := range org.Spaces {
+			shared := map[string]string{}
+			for svc, details := range space.SharedServices {
+				shared[fmt.Sprintf("%s-%s", "shared", svc)] = details
+			}
+			space.SharedServices = shared
+
 			for a, app := range space.Applications {
 				/* default to 1 instance of each application */
 				if app.Instances < 1 {
@@ -78,15 +84,22 @@ func ParseManifest(src io.Reader) (Manifest, error) {
 					m.Organizations[o].Spaces[s].Applications[a].Domain = space.Domain
 				}
 
-				for _, svc := range app.SharedServices {
+				services := map[string]string{}
+				for svc, details := range app.BoundServices {
+					services[fmt.Sprintf("%s-%s", app.Name, svc)] = details
+				}
+				for _, sv_ := range app.SharedServices {
+					svc := fmt.Sprintf("shared-%s", sv_)
 					bind, ok := space.SharedServices[svc]
 					if !ok {
 						return m, fmt.Errorf("reference to shared service '%s' in %s/%s application %s could not be found",
 							svc, o, s, app.Name)
 					}
-					m.Organizations[o].Spaces[s].Applications[a].BoundServices[svc] = bind
+					services[svc] = bind
 				}
+				app.BoundServices = services
 			}
+
 		}
 	}
 

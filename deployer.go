@@ -173,7 +173,7 @@ func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
 	return d.run("set-space-role", user, org, space, role)
 }
 
-func (d *Deployer) stageApp(app Application) error {
+func (d *Deployer) stageApp(app *Application) error {
 	args := []string{"push", app.Name, "--no-start", "-i", fmt.Sprintf("%v", app.Instances)}
 
 	if app.Hostname != "" {
@@ -223,7 +223,7 @@ func (d *Deployer) setEnvVar(name, value, app string) error {
 	return d.run("set-env", app, name, value)
 }
 
-func (d *Deployer) startApp(app Application) error {
+func (d *Deployer) startApp(app *Application) error {
 	return d.run("start", app.Name)
 }
 
