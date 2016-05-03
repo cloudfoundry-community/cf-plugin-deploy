@@ -15,17 +15,13 @@ type URL struct {
 }
 
 func ParseURL(s, domain string) URL {
-	if strings.ContainsRune(s, '.') {
-		p := strings.SplitN(s, ".", 2)
-		return URL{
-			Host:   p[0],
-			Domain: p[1],
-		}
+	p := strings.SplitN(s, ".", 2)
+	if len(p) == 1 {
+		p = append(p, domain)
 	}
-
 	return URL{
-		Host:   s,
-		Domain: domain,
+		Host:   p[0],
+		Domain: p[1],
 	}
 }
 
