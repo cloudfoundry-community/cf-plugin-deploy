@@ -30,3 +30,16 @@ organizations:
             # then run:
             #   cf create-service-broker rabbitmq admin admin https://rabbit-broker.bosh-lite.com
             #   cf enable-service-access rabbitmq
+
+          - name: vault
+            repo: https://github.com/cloudfoundry-community/worlds-simplest-service-broker
+            instances: 1
+            env:
+              BASE_GUID: 4986B89F-AB7C-4E3A-8F70-B9F37CD829D7
+              SERVICE_NAME: vault
+              SERVICE_PLAN: shared
+              CREDENTIALS:  '{"ha":"hehehe"}'
+              TAGS: vault
+            # then run:
+            #   cf create-service-broker vault admin admin https://vault-broker.bosh-lite.com
+            #   cf enable-service-access vault
