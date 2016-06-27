@@ -42,6 +42,8 @@ type Organization struct {
 	Domains     []string            `yaml:"domains"`
 	Environment map[string]string   `yaml:"env"`
 	Spaces      map[string]*Space   `yaml:"spaces"`
+	Quota       string              `yaml:"quota"`
+	Quotas      map[string]*Quota   `yaml:"quotas"`
 }
 
 type Space struct {
@@ -50,6 +52,7 @@ type Space struct {
 	Users          map[string][]string `yaml:"users"`
 	Environment    map[string]string   `yaml:"env"`
 	SharedServices map[string]string   `yaml:"services"`
+	Quota          string              `yaml:"quota"`
 	Applications   []*Application      `yaml:"apps"`
 }
 
@@ -73,9 +76,19 @@ type Application struct {
 	SharedServices []string          `yaml:"shared"`
 }
 
+type Quota struct {
+	Memory                map[string]string `yaml:"memory"`
+	TotalAppInstances     string            `yaml:"app-instances"`
+	ServiceInstances      string            `yaml:"service-instances"`
+	Routes                string            `yaml:"routes"`
+	PaidPlans             bool              `yaml:"allow-paid-plans"`
+	NumRoutesWithResPorts string            `yaml:"reserve-route-ports"`
+}
+
 type Manifest struct {
 	Domains       []string                 `yaml:"domains"`
 	Users         []User                   `yaml:"users"`
+	Quotas        map[string]*Quota        `yaml:"quotas"`
 	Organizations map[string]*Organization `yaml:"organizations"`
 }
 

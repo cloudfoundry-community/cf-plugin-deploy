@@ -9,7 +9,26 @@ users:
   - username: jhunt
     password: yeah right
 
+quotas:
+  default:
+    memory:
+      total: 10G
+    service-instances: 100
+    routes: 1000
+    allow-paid-plans: true
+
 organizations:
+  quota: default
+  
+  quotas:
+    space-default:
+      memory:
+        total: 10G
+        per-app-instance: 1G
+      service-instances: 100
+      allow-paid-plans: true
+      routes: 100
+
   StarkAndWayne:
     users:
       joe: [OrgManager]

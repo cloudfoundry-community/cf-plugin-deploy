@@ -301,10 +301,93 @@ func (d *Deployer) bindService(service, app string) error {
 	return d.run("bind-service", app, service)
 }
 
+func (d *Deployer) setQuotaArgs(quota *Quota) []string {
+	var args []string
+	if quota.Memory["total"] != "" {
+		args = append(args, "-m", quota.Memory["total"])
+	}
+	if quota.Memory["per-app-instance"] != "" {
+		perAppInstance := quota.Memory["per-app-instance"]
+		if perAppInstance == "unlimited" {
+			perAppInstance = "-1"
+		}
+		args = append(args, "-i", perAppInstance)
+	}
+	if quota.TotalAppInstances != "" {
+		appInstances := quota.TotalAppInstances
+		if appInstances == "unlimited" {
+			appInstances = "-1"
+		}
+		args = append(args, "-a", quota.TotalAppInstances)
+	}
+	if quota.ServiceInstances != "" {
+		args = append(args, "-s", quota.ServiceInstances)
+	}
+	if quota.Routes != "" {
+		args = append(args, "-r", quota.Routes)
+	}
+	if quota.PaidPlans {
+		args = append(args, "--allow-paid-service-plans")
+	}
+	if quota.NumRoutesWithResPorts != "" {
+		args = append(args, "--reserved-route-ports", quota.NumRoutesWithResPorts)
+	}
+	return args
+}
+
+func (d *Deployer) createUpdateSpaceQuota(qname string, quota *Quota, oname string) error {
+	org, _ := d.cf.GetOrg(oname)
+	if org.Guid == "" {
+		return nil
+	}
+	if err := d.run("target", "-o", oname); err != nil {
+		return err
+	}
+	args := []string{"create-space-quota", qname}
+	args = append(args, d.setQuotaArgs(quota)...)
+	for _, cname := range org.SpaceQuotas {
+		if cname.Name == qname {
+			args[0] = "update-space-quota"
+		}
+	}
+
+	return d.run(args...)
+}
+
+func (d *Deployer) createOrgQuota(qname string) error {
+	return d.run("create-quota", qname)
+}
+
+func (d *Deployer) updateOrgQuota(qname string, quota *Quota) error {
+	args := []string{"update-quota", qname}
+	args = append(args, d.setQuotaArgs(quota)...)
+	return d.run(args...)
+}
+
+func (d *Deployer) setQuota(name, quota string, space bool) error {
+	cmd := "set-quota"
+	if space {
+		cmd = "set-space-quota"
+	}
+	return d.run(cmd, name, quota)
+}
+
 func (d *Deployer) Deploy() error {
 	for _, domain := range d.manifest.Domains {
 		fmt.Printf("setting up shared (global) domain '%s'\n", domain)
 		if err := d.createSharedDomain(domain); err != nil {
+			return err
+		}
+	}
+	for qname, quota := range d.manifest.Quotas {
+		fmt.Printf("creating/updating org quota '%s'\n", qname)
+		// NOTE: create and update are separated because there is currently no way
+		//       to pull existing top-level quota information out. This method
+		//       avoids errors/failures.
+		if err := d.createOrgQuota(qname); err != nil {
+			return err
+		}
+		if err := d.updateOrgQuota(qname, quota); err != nil {
 			return err
 		}
 	}
@@ -321,7 +404,18 @@ func (d *Deployer) Deploy() error {
 				return err
 			}
 		}
-
+		if org.Quota != "" {
+			fmt.Printf("  applying organization quota '%s'\n", org.Quota)
+			if err := d.setQuota(oname, org.Quota, false); err != nil {
+				return err
+			}
+		}
+		for sqname, squota := range org.Quotas {
+			fmt.Printf("  creating/updating space quota '%s'\n", sqname)
+			if err := d.createUpdateSpaceQuota(sqname, squota, oname); err != nil {
+				return err
+			}
+		}
 		for uname, roles := range org.Users {
 			fmt.Printf("  granting org-level access to user '%s'\n", uname)
 			if err := d.createUser(uname); err != nil {
@@ -352,6 +446,13 @@ func (d *Deployer) Deploy() error {
 
 			if space.Domain != "" {
 				fmt.Printf("    using default domain of '%s'\n", space.Domain)
+			}
+
+			if space.Quota != "" {
+				fmt.Printf("    applying space quota '%s'\n", space.Quota)
+				if err := d.setQuota(sname, space.Quota, true); err != nil {
+					return err
+				}
 			}
 
 			for uname, roles := range space.Users {
