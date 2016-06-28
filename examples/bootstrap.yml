@@ -1,0 +1,153 @@
+---
+meta:
+
+  # Domains
+  region: region
+  base-domain: (( concat "aws-" meta.region ".domain.com" ))
+  run-domain: (( concat "run." meta.base-domain ))
+  system-domain: (( concat "system." meta.base-domain ))
+
+  # Credentials
+  default_dev_pass: !!p@ssw0rd
+  default_user_pass: p@ssw0rd!!
+
+  developer-org:
+    quota: developer-quota
+    domains:
+      - (( concat "uaa." meta.run-domain ))
+      - (( concat "test." meta.run-domain ))
+    users:
+      jobs: [OrgManager]
+      gates: [OrgManager]
+      torvalds: [OrgManager]
+
+  developer-space:
+    users:
+      jobs: [SpaceManager]
+      jobs: [SpaceDeveloper]
+      gates: [SpaceManager]
+      gates: [SpaceDeveloper]
+      torvalds: [SpaceManager]
+      torvalds: [SpaceDeveloper]
+
+users:
+# Devs
+- username: jobs
+  password: (( grab meta.default_dev_pass ))
+- username: gates
+  password: (( grab meta.default_dev_pass ))
+- username: torvalds
+  password: (( grab meta.default_dev_pass ))
+# Ops
+- username: staging-user
+  password: (( grab meta.default_user_pass ))
+- username: staging-admin
+  password: (( grab meta.default_user_pass ))
+# Support
+- username: support
+  password: (( grab meta.default_user_pass ))
+
+domains:
+  - (( grab meta.system-domain ))
+  - (( grab meta.run-domain ))
+
+quotas:
+  default:
+    memory:
+      total: 10240
+    service-instances: 100
+    routes: 1000
+    allow-paid-plans: true
+  enterprise:
+    memory:
+      total: 1228800
+    service-instances: 1000
+    routes: 1000
+    allow-paid-plans: true
+  free-trial:
+    memory:
+      total: 10240
+      per-app-instance: 1G
+    service-instances: 10
+    routes: 100
+    allow-paid-plans: true
+  paid-subscription:
+    memory:
+      total: 10G
+      per-app-instance: 1G
+    service-instances: 100
+    allow-paid-plans: true
+    routes: 100
+  disabled:
+    memory:
+      total: 0
+      per-app-instance: 0
+    service-instances: 0
+    allow-paid-plans: false
+    routes: 0
+  # internal quotas
+  developer-quota:
+    memory:
+      total: 100G
+      per-app-instance: unlimited
+    service-instances: 100
+    allow-paid-plans: true
+    routes: 1000
+  operations-quota:
+    memory:
+      total: 100G
+      per-app-instance: unlimited
+    service-instances: 100
+    allow-paid-plans: true
+    routes: 1000
+
+organizations:
+
+# Development
+  sandbox:
+    .: (( inject meta.developer-org ))
+    spaces:
+      sandbox: (( grab meta.developer-space ))
+
+  production:
+    .: (( inject meta.developer-org ))
+    spaces:
+      production: (( grab meta.developer-space ))
+
+  analytics:
+    .: (( inject meta.developer-org ))
+    spaces:
+      analytics: (( grab meta.developer-space ))
+
+  data-services:
+    .: (( inject meta.developer-org ))
+    spaces:
+      data-services: (( grab meta.developer-space ))
+
+  mobile:
+    .: (( inject meta.developer-org ))
+    spaces:
+      mobile: (( grab meta.developer-space ))
+
+# Operations
+  staging:
+    quota: operations-quota
+    spaces:
+      staging:
+        users:
+          staging-user: [SpaceDeveloper]
+          staging-admin: [SpaceDeveloper]
+
+# Support
+  support:
+    domains:
+      - (( concat "uaa." meta.run-domain ))
+      - (( concat "test." meta.run-domain ))
+    quota: developer-quota
+    users:
+      support: [OrgManager]
+    spaces:
+      support:
+        users:
+          support: [SpaceManager]
+          support: [SpaceDeveloper]

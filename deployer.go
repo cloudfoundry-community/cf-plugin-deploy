@@ -93,8 +93,10 @@ func (d *Deployer) createOrgDomain(org, domain string) error {
 		}
 	}
 
-	if err := d.run("create-domain", org, domain); err != nil {
-		return err
+	if err := d.run("share-private-domain", org, domain); err != nil {
+		if err := d.run("create-domain", org, domain); err != nil {
+			return err
+		}
 	}
 
 	return nil

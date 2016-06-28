@@ -7,5 +7,9 @@ cf:
 	cf uninstall-plugin deploy || true
 	yes | cf install-plugin cf-plugin-*
 
+bootstrap:
+	spruce merge --prune meta examples/bootstrap.yml > examples/.bootstrap.yml
+	cf deploy < examples/.bootstrap.yml
+	rm examples/.bootstrap.yml
 
 it: build cf
