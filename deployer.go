@@ -223,6 +223,9 @@ func (d *Deployer) stageApp(app *Application) error {
 				return err
 			}
 		}
+		if app.Path != "" {
+			path = fmt.Sprintf("%s/%s", path, app.Path)
+		}
 		args = append(args, "-p", path)
 	} else if app.Path != "" {
 		args = append(args, "-p", app.Path)
