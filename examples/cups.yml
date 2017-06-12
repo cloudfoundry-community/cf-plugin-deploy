@@ -1,0 +1,94 @@
+---
+meta:
+
+  # Domains
+  base-domain: pcf19.starkandwayne.com 
+  run-domain: (( concat "run." meta.base-domain ))
+  system-domain: (( concat "system." meta.base-domain ))
+
+  # Credentials
+  default_dev_pass: !!p@ssw0rd
+  default_user_pass: p@ssw0rd!!
+
+  developer-org:
+    quota: default
+    domains:
+      - (( concat "uaa." meta.run-domain ))
+      - (( concat "test." meta.run-domain ))
+    users:
+      jobs: [OrgManager]
+      gates: [OrgManager]
+      torvalds: [OrgManager]
+
+  developer-space:
+    users:
+      jobs: [SpaceManager]
+      jobs: [SpaceDeveloper]
+      gates: [SpaceManager]
+      gates: [SpaceDeveloper]
+      torvalds: [SpaceManager]
+      torvalds: [SpaceDeveloper]
+
+users:
+# Devs
+- username: jobs
+  password: (( grab meta.default_dev_pass ))
+- username: gates
+  password: (( grab meta.default_dev_pass ))
+- username: torvalds
+  password: (( grab meta.default_dev_pass ))
+# Ops
+- username: staging-user
+  password: (( grab meta.default_user_pass ))
+- username: staging-admin
+  password: (( grab meta.default_user_pass ))
+
+domains:
+  - (( grab meta.system-domain ))
+  - (( grab meta.run-domain ))
+
+quotas:
+  default:
+    memory:
+      total: 10240M
+    service-instances: 100
+    routes: 1000
+    allow-paid-plans: true
+
+organizations:
+
+# Development
+  sandbox:
+    .: (( inject meta.developer-org ))
+    spaces:
+      sandbox:
+        user-provided-services:
+        - name: test1
+          credentials:
+                username: user
+                password: passwd
+                name:
+                    key: value1
+                    key2: value2
+        - name: test2
+          route_service_url: https://example.com
+        - name: test3
+          syslog_drain_url: syslog://example.com
+        - name: test4
+          route_service_url: https://example.com
+          syslog_drain_url: syslog://example.com
+          credentials:
+                username: user
+                password: passwd
+                name:
+                    key: value1
+                    key2: value2
+           
+        .: (( inject meta.developer-space ))
+# Operations
+  staging:
+    spaces:
+      staging:
+        users:
+          staging-user: [SpaceDeveloper]
+          staging-admin: [SpaceDeveloper]

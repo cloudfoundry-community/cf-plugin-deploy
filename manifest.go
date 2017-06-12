@@ -47,13 +47,14 @@ type Organization struct {
 }
 
 type Space struct {
-	SSH            string              `yaml:"ssh"`
-	Domain         string              `yaml:"domain"`
-	Users          map[string][]string `yaml:"users"`
-	Environment    map[string]string   `yaml:"env"`
-	SharedServices map[string]string   `yaml:"services"`
-	Quota          string              `yaml:"quota"`
-	Applications   []*Application      `yaml:"apps"`
+	SSH                  string                 `yaml:"ssh"`
+	Domain               string                 `yaml:"domain"`
+	Users                map[string][]string    `yaml:"users"`
+	Environment          map[string]string      `yaml:"env"`
+	SharedServices       map[string]string      `yaml:"services"`
+	Quota                string                 `yaml:"quota"`
+	Applications         []*Application         `yaml:"apps"`
+	UserProvidedServices []*UserProvidedService `yaml:"user-provided-services"`
 }
 
 type Application struct {
@@ -90,6 +91,13 @@ type Manifest struct {
 	Users         []User                   `yaml:"users"`
 	Quotas        map[string]*Quota        `yaml:"quotas"`
 	Organizations map[string]*Organization `yaml:"organizations"`
+}
+
+type UserProvidedService struct {
+	Name            string      `yaml:"name"`
+	Credentials     interface{} `yaml:"credentials"`
+	RouteServiceUrl string      `yaml:"route_service_url"`
+	SyslogDrainUrl  string      `yaml:"syslog_drain_url"`
 }
 
 func ParseManifest(src io.Reader) (Manifest, error) {

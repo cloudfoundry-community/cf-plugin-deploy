@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -45,7 +46,7 @@ func (d *Deployer) createUser(user string) error {
 		if u.Name == user {
 			/* if we have a username and password, let's set them!
 			   (note that this fails miserably if the user exists but has a different
-				password.  oh well.) */
+			    password.  oh well.) */
 			d.run("create-user", u.Name, u.Password)
 			return nil
 		}
@@ -306,6 +307,24 @@ func (d *Deployer) bindService(service, app string) error {
 	return d.run("bind-service", app, service)
 }
 
+func (d *Deployer) userProvidedService(name, cred, route, syslog string) error {
+	args := []string{"create-user-provided-service", name}
+	if cred != "" {
+		args = append(args, "-p", cred)
+	}
+	if route != "" {
+		args = append(args, "-r", route)
+	}
+	if syslog != "" {
+		args = append(args, "-l", syslog)
+	}
+	if err := d.run(args...); err != nil {
+		args[0] = "update-user-provided-service"
+		return d.run(args...)
+	}
+	return nil
+}
+
 func (d *Deployer) setQuotaArgs(quota *Quota) []string {
 	var args []string
 	if quota.Memory["total"] != "" {
@@ -479,6 +498,25 @@ func (d *Deployer) Deploy() error {
 					return err
 				}
 			}
+
+			for _, cups := range space.UserProvidedServices {
+				if cups.Name != "" {
+					fmt.Printf("    creating/updating a user provided service %s\n", cups.Name)
+					var cred string
+					if cups.Credentials != nil {
+						obj := dynamicYamlHelper(cups.Credentials)
+						c, err := json.Marshal(obj)
+						if err != nil {
+							return err
+						}
+						cred = string(c)
+					}
+					if err := d.userProvidedService(cups.Name, cred, cups.RouteServiceUrl, cups.SyslogDrainUrl); err != nil {
+						return err
+					}
+				}
+			}
+
 			for _, app := range space.Applications {
 				fmt.Printf("    staging application '%s'\n", app.Name)
 				fmt.Printf("      spinning up %d instances\n", app.Instances)
@@ -542,4 +580,27 @@ func (d *Deployer) Deploy() error {
 	}
 
 	return nil
+}
+
+/*
+ * This method iterates through the interface object recursively and
+ * converts each map[interface{}]interface{} to map[string]interface{}.
+ * This solves the problem of converting an unknown depth of a YAML object
+ * to a JSON object.
+ */
+
+func dynamicYamlHelper(data interface{}) interface{} {
+	switch res := data.(type) {
+	case map[interface{}]interface{}:
+		temp := map[string]interface{}{}
+		for key, val := range res {
+			temp[key.(string)] = dynamicYamlHelper(val)
+		}
+		return temp
+	case []interface{}:
+		for i, val := range res {
+			res[i] = dynamicYamlHelper(val)
+		}
+	}
+	return data
 }

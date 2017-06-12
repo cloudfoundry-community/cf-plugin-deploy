@@ -107,8 +107,17 @@ organizations:
   sandbox:
     .: (( inject meta.developer-org ))
     spaces:
-      sandbox: (( grab meta.developer-space ))
-
+      sandbox:
+        user-provided-services:
+        - name: test1
+          credentials:
+                key: user
+                value: password
+        - name: test2
+          route_service_url: https://example.com
+        - name: test3
+          syslog_drain_url: syslog://example.com
+        .: (( inject meta.developer-space ))
   production:
     .: (( inject meta.developer-org ))
     spaces:
