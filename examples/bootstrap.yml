@@ -54,19 +54,19 @@ domains:
 quotas:
   default:
     memory:
-      total: 10240
+      total: 10240M
     service-instances: 100
     routes: 1000
     allow-paid-plans: true
   enterprise:
     memory:
-      total: 1228800
+      total: 1228800M
     service-instances: 1000
     routes: 1000
     allow-paid-plans: true
   free-trial:
     memory:
-      total: 10240
+      total: 10240M
       per-app-instance: 1G
     service-instances: 10
     routes: 100
@@ -80,8 +80,8 @@ quotas:
     routes: 100
   disabled:
     memory:
-      total: 0
-      per-app-instance: 0
+      total: 0M
+      per-app-instance: 0M
     service-instances: 0
     allow-paid-plans: false
     routes: 0
