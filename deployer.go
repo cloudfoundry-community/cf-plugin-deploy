@@ -84,7 +84,7 @@ func (d *Deployer) createOrg(org string) error {
 
 func (d *Deployer) createOrgDomain(org, domain string) error {
 	o, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -105,12 +105,12 @@ func (d *Deployer) createOrgDomain(org, domain string) error {
 
 func (d *Deployer) grantOrgRole(org, user, role string) error {
 	_, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
 	users, err := d.cf.GetOrgUsers(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -129,7 +129,7 @@ func (d *Deployer) grantOrgRole(org, user, role string) error {
 
 func (d *Deployer) createSpace(org, space string) error {
 	o, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (d *Deployer) enableSSH(space string, on bool) error {
 
 func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
 	_, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -166,12 +166,12 @@ func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
 		return err
 	}
 	_, err = d.cf.GetSpace(space)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
 	users, err := d.cf.GetSpaceUsers(org, space)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
