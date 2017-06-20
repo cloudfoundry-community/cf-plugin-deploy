@@ -10,7 +10,7 @@ cf:
 bootstrap:
 	spruce merge --prune meta examples/bootstrap.yml > examples/.bootstrap.yml
 	cf deploy < examples/.bootstrap.yml
-	rm examples/.bootstrap-bak.yml
+	rm examples/.bootstrap.yml
 
 cups:
 	spruce merge --prune meta examples/cups.yml > examples/.cups.yml
