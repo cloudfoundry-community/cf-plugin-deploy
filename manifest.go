@@ -87,10 +87,12 @@ type Quota struct {
 }
 
 type Manifest struct {
-	Domains       []string                 `yaml:"domains"`
-	Users         []User                   `yaml:"users"`
-	Quotas        map[string]*Quota        `yaml:"quotas"`
-	Organizations map[string]*Organization `yaml:"organizations"`
+	Domains              []string                  `yaml:"domains"`
+	Users                []User                    `yaml:"users"`
+	Quotas               map[string]*Quota         `yaml:"quotas"`
+	Organizations        map[string]*Organization  `yaml:"organizations"`
+    SecurityGroups       map[string]*SecurityGroup `yaml:"security_groups"`
+    GlobalSecurityGroups GlobalSecurityGroup       `yaml:"global_security_groups"`
 }
 
 type UserProvidedService struct {
@@ -98,6 +100,16 @@ type UserProvidedService struct {
 	Credentials     interface{} `yaml:"credentials"`
 	RouteServiceUrl string      `yaml:"route_service_url"`
 	SyslogDrainUrl  string      `yaml:"syslog_drain_url"`
+}
+
+type SecurityGroup struct {
+	Rules             []interface{} `yaml:"rules"`
+	SecurityGroupFile string        `yaml:"security_group_file"`
+}
+
+type GlobalSecurityGroup struct {
+    running []string `yaml:"running"`
+    staging []string `yaml:"staging"`
 }
 
 func ParseManifest(src io.Reader) (Manifest, error) {
