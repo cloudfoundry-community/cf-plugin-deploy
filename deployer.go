@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+    "bytes"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -388,6 +389,67 @@ func (d *Deployer) updateOrgQuota(qname string, quota *Quota) error {
 	return d.run(args...)
 }
 
+func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (sgFileName string,cleanup bool,  err error) {
+    sgFileName = ""
+    cleanup = false
+
+    if sgrule.SecurityGroupFile == "" {
+        rules := dynamicYamlHelper(sgrule.Rules)
+        var rulesJson []byte
+        rulesJson, err = json.Marshal(rules)
+        if err != nil {
+            return
+        }
+        var prettyJson bytes.Buffer
+        json.Indent(&prettyJson, rulesJson, "", "  ")
+        var fp *os.File
+        fp, err = ioutil.TempFile( "", sgname)
+        sgFileName = fp.Name()
+        cleanup = true
+        if err != nil {
+            return
+        }
+        _, err = fp.Write(prettyJson.Bytes())
+        if err != nil {
+            return
+        }
+        _, err = fp.WriteString("\n")
+        if err != nil {
+            return
+        }
+        fp.Close()
+        fmt.Printf("DEBUG security group rule\n%s\n", prettyJson.String())
+    } else {
+        sgFileName = sgrule.SecurityGroupFile
+    }
+    fmt.Printf("DEBUG security group file %s\n", sgFileName)
+    return
+}
+
+func (d *Deployer) createSecurityGroup(sgname, file string) error {
+	return d.run("create-security-group", sgname, file)
+}
+
+func (d *Deployer) updateSecurityGroup(sgname, file string) error {
+	return d.run("update-security-group", sgname, file)
+}
+
+func (d *Deployer) bindRunningSecurityGroup(sgname string) error {
+	return d.run("bind-running-security-group", sgname)
+}
+
+func (d *Deployer) bindStagingSecurityGroup(sgname string) error {
+	return d.run("bind-staging-security-group", sgname)
+}
+
+func (d *Deployer) bindOrgSecurityGroup(sgname, org  string) error {
+	return d.run("bind-security-group", sgname, org)
+}
+
+func (d *Deployer) bindSpaceSecurityGroup(sgname, org, space  string) error {
+	return d.run("bind-security-group", sgname, org, space)
+}
+
 func (d *Deployer) setQuota(name, quota string, space bool) error {
 	cmd := "set-quota"
 	if space {
@@ -415,6 +477,21 @@ func (d *Deployer) Deploy() error {
 			return err
 		}
 	}
+
+    for sgname, sgrule := range d.manifest.SecurityGroups {
+		fmt.Printf("creating/updating security group '%s'\n", sgname)
+        file, cleanup, err := d.getSecurityGroupFile(sgname, sgrule)
+        if cleanup {
+            defer func() {
+                if file != "" {
+                    os.Remove(file)
+                }
+            }()
+        }
+        if err != nil {
+            return err
+        }
+    }
 
 	for oname, org := range d.manifest.Organizations {
 		fmt.Printf("creating organization '%s'\n", oname)
