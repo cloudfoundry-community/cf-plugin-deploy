@@ -42,6 +42,22 @@ func (d *Deployer) run(args ...string) error {
 	return err
 }
 
+func (d *Deployer) runWithOutput(args ...string) ([]string,error) {
+	if os.Getenv("DEBUG") != "" {
+		fmt.Printf(">> %s\n", strings.Join(args, " "))
+	}
+	if os.Getenv("DRYRUN") != "" {
+		return nil, nil
+	}
+	result, err := d.cf.CliCommandWithoutTerminalOutput(args...)
+    if os.Getenv("DEBUG") != "" {
+        for _,l := range result {
+            fmt.Printf("%s\n", l)
+        }
+    }
+    return result, err
+}
+
 func (d *Deployer) createUser(user string) error {
 	for _, u := range d.manifest.Users {
 		if u.Name == user {
@@ -418,20 +434,29 @@ func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (s
             return
         }
         fp.Close()
-        fmt.Printf("DEBUG security group rule\n%s\n", prettyJson.String())
+        if os.Getenv("DEBUG") != "" {
+            fmt.Printf("security group rule %s\n%s\n", sgname, prettyJson.String())
+        }
     } else {
         sgFileName = sgrule.SecurityGroupFile
     }
-    fmt.Printf("DEBUG security group file %s\n", sgFileName)
+    if os.Getenv("DEBUG") != "" {
+        fmt.Printf("security group %s file %s\n", sgname, sgFileName)
+    }
     return
 }
 
+// TBD Do we need to more specific on testing existence by inspecting err?
+func (d *Deployer) testSecurityGroup(sgname string) error {
+    return d.run("security-group", sgname)
+}
+
 func (d *Deployer) createSecurityGroup(sgname, file string) error {
-	return d.run("create-security-group", sgname, file)
+    return d.run("create-security-group", sgname, file)
 }
 
 func (d *Deployer) updateSecurityGroup(sgname, file string) error {
-	return d.run("update-security-group", sgname, file)
+    return d.run("update-security-group", sgname, file)
 }
 
 func (d *Deployer) bindRunningSecurityGroup(sgname string) error {
@@ -479,17 +504,38 @@ func (d *Deployer) Deploy() error {
 	}
 
     for sgname, sgrule := range d.manifest.SecurityGroups {
-		fmt.Printf("creating/updating security group '%s'\n", sgname)
         file, cleanup, err := d.getSecurityGroupFile(sgname, sgrule)
-        if cleanup {
-            defer func() {
-                if file != "" {
-                    os.Remove(file)
-                }
-            }()
-        }
         if err != nil {
             return err
+        }
+        if err := d.testSecurityGroup(sgname); err != nil {
+            fmt.Printf("creating security group '%s'\n", sgname)
+            if  err := d.createSecurityGroup(sgname, file); err != nil {
+                return err
+            }
+        } else {
+            fmt.Printf("updating security group '%s'\n", sgname)
+            if  err := d.updateSecurityGroup(sgname, file); err != nil {
+                return err
+            }
+        }
+        if cleanup {
+            os.Remove(file)
+        }
+    }
+
+    if d.manifest.SecurityGroupSets != nil {
+        for _, sgname := range d.manifest.SecurityGroupSets.Running {
+            fmt.Printf("bind running security group %s\n", sgname)
+            if  err := d.bindRunningSecurityGroup(sgname); err != nil {
+                return err
+            }
+        }
+        for _, sgname := range d.manifest.SecurityGroupSets.Staging {
+            fmt.Printf("bind staging security group %s\n", sgname)
+            if  err := d.bindStagingSecurityGroup(sgname); err != nil {
+                return err
+            }
         }
     }
 
@@ -505,18 +551,28 @@ func (d *Deployer) Deploy() error {
 				return err
 			}
 		}
+
 		if org.Quota != "" {
 			fmt.Printf("  applying organization quota '%s'\n", org.Quota)
 			if err := d.setQuota(oname, org.Quota, false); err != nil {
 				return err
 			}
 		}
+
 		for sqname, squota := range org.Quotas {
 			fmt.Printf("  creating/updating space quota '%s'\n", sqname)
 			if err := d.createUpdateSpaceQuota(sqname, squota, oname); err != nil {
 				return err
 			}
 		}
+
+        for _, sgname := range org.SecurityGroups {
+            fmt.Printf("  bind organization security group %s\n", sgname)
+            if  err := d.bindOrgSecurityGroup(sgname, oname); err != nil {
+                return err
+            }
+        }
+
 		for uname, roles := range org.Users {
 			fmt.Printf("  granting org-level access to user '%s'\n", uname)
 			if err := d.createUser(uname); err != nil {
@@ -555,6 +611,13 @@ func (d *Deployer) Deploy() error {
 					return err
 				}
 			}
+
+            for _, sgname := range space.SecurityGroups {
+                fmt.Printf("    bind space security group %s\n", sgname)
+                if  err := d.bindSpaceSecurityGroup(sgname, oname, sname); err != nil {
+                    return err
+                }
+            }
 
 			for uname, roles := range space.Users {
 				fmt.Printf("    granting space-level access to user '%s'\n", uname)
