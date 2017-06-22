@@ -68,12 +68,13 @@ security_groups:
     - destination: 10.0.0.2
       protocol: icmp
       code: -1
+      type: -1
   global-sg:
     rules:
     - destination: 10.0.0.3
       protocol: all
 
-global_security_groups:
+security_groups_sets:
   staging:
   - global-sg
   running:
@@ -82,10 +83,12 @@ global_security_groups:
 organizations:
 
 # Development
-  sandbox:
+  cf-deploy-plugin-test-sandbox:
     .: (( inject meta.developer-org ))
     spaces:
       sandbox:
+        security-groups:
+        - space-sg
         user-provided-services:
         - name: test1
           credentials:
@@ -110,7 +113,9 @@ organizations:
            
         .: (( inject meta.developer-space ))
 # Operations
-  staging:
+  cf-deploy-plugin-test-staging:
+    security-groups:
+    - org-sg
     spaces:
       staging:
         users:
