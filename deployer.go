@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+    "bytes"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -39,6 +40,22 @@ func (d *Deployer) run(args ...string) error {
 	}
 	_, err := d.cf.CliCommandWithoutTerminalOutput(args...)
 	return err
+}
+
+func (d *Deployer) runWithOutput(args ...string) ([]string,error) {
+	if os.Getenv("DEBUG") != "" {
+		fmt.Printf(">> %s\n", strings.Join(args, " "))
+	}
+	if os.Getenv("DRYRUN") != "" {
+		return nil, nil
+	}
+	result, err := d.cf.CliCommandWithoutTerminalOutput(args...)
+    if os.Getenv("DEBUG") != "" {
+        for _,l := range result {
+            fmt.Printf("%s\n", l)
+        }
+    }
+    return result, err
 }
 
 func (d *Deployer) createUser(user string) error {
@@ -84,7 +101,7 @@ func (d *Deployer) createOrg(org string) error {
 
 func (d *Deployer) createOrgDomain(org, domain string) error {
 	o, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -105,12 +122,12 @@ func (d *Deployer) createOrgDomain(org, domain string) error {
 
 func (d *Deployer) grantOrgRole(org, user, role string) error {
 	_, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
 	users, err := d.cf.GetOrgUsers(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -129,7 +146,7 @@ func (d *Deployer) grantOrgRole(org, user, role string) error {
 
 func (d *Deployer) createSpace(org, space string) error {
 	o, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -158,7 +175,7 @@ func (d *Deployer) enableSSH(space string, on bool) error {
 
 func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
 	_, err := d.cf.GetOrg(org)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -166,12 +183,12 @@ func (d *Deployer) grantSpaceRole(org, space, user, role string) error {
 		return err
 	}
 	_, err = d.cf.GetSpace(space)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
 	users, err := d.cf.GetSpaceUsers(org, space)
-	if err != nil {
+	if err != nil && os.Getenv("DRYRUN") == "" {
 		return err
 	}
 
@@ -388,6 +405,76 @@ func (d *Deployer) updateOrgQuota(qname string, quota *Quota) error {
 	return d.run(args...)
 }
 
+func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (sgFileName string,cleanup bool,  err error) {
+    sgFileName = ""
+    cleanup = false
+
+    if sgrule.SecurityGroupFile == "" {
+        rules := dynamicYamlHelper(sgrule.Rules)
+        var rulesJson []byte
+        rulesJson, err = json.Marshal(rules)
+        if err != nil {
+            return
+        }
+        var prettyJson bytes.Buffer
+        json.Indent(&prettyJson, rulesJson, "", "  ")
+        var fp *os.File
+        fp, err = ioutil.TempFile( "", sgname)
+        sgFileName = fp.Name()
+        cleanup = true
+        if err != nil {
+            return
+        }
+        _, err = fp.Write(prettyJson.Bytes())
+        if err != nil {
+            return
+        }
+        _, err = fp.WriteString("\n")
+        if err != nil {
+            return
+        }
+        fp.Close()
+        if os.Getenv("DEBUG") != "" {
+            fmt.Printf("security group rule %s\n%s\n", sgname, prettyJson.String())
+        }
+    } else {
+        sgFileName = sgrule.SecurityGroupFile
+    }
+    if os.Getenv("DEBUG") != "" {
+        fmt.Printf("security group %s file %s\n", sgname, sgFileName)
+    }
+    return
+}
+
+// TBD Do we need to more specific on testing existence by inspecting err?
+func (d *Deployer) testSecurityGroup(sgname string) error {
+    return d.run("security-group", sgname)
+}
+
+func (d *Deployer) createSecurityGroup(sgname, file string) error {
+    return d.run("create-security-group", sgname, file)
+}
+
+func (d *Deployer) updateSecurityGroup(sgname, file string) error {
+    return d.run("update-security-group", sgname, file)
+}
+
+func (d *Deployer) bindRunningSecurityGroup(sgname string) error {
+	return d.run("bind-running-security-group", sgname)
+}
+
+func (d *Deployer) bindStagingSecurityGroup(sgname string) error {
+	return d.run("bind-staging-security-group", sgname)
+}
+
+func (d *Deployer) bindOrgSecurityGroup(sgname, org  string) error {
+	return d.run("bind-security-group", sgname, org)
+}
+
+func (d *Deployer) bindSpaceSecurityGroup(sgname, org, space  string) error {
+	return d.run("bind-security-group", sgname, org, space)
+}
+
 func (d *Deployer) setQuota(name, quota string, space bool) error {
 	cmd := "set-quota"
 	if space {
@@ -416,6 +503,42 @@ func (d *Deployer) Deploy() error {
 		}
 	}
 
+    for sgname, sgrule := range d.manifest.SecurityGroups {
+        file, cleanup, err := d.getSecurityGroupFile(sgname, sgrule)
+        if err != nil {
+            return err
+        }
+        if err := d.testSecurityGroup(sgname); err != nil {
+            fmt.Printf("creating security group '%s'\n", sgname)
+            if  err := d.createSecurityGroup(sgname, file); err != nil {
+                return err
+            }
+        } else {
+            fmt.Printf("updating security group '%s'\n", sgname)
+            if  err := d.updateSecurityGroup(sgname, file); err != nil {
+                return err
+            }
+        }
+        if cleanup {
+            os.Remove(file)
+        }
+    }
+
+    if d.manifest.SecurityGroupSets != nil {
+        for _, sgname := range d.manifest.SecurityGroupSets.Running {
+            fmt.Printf("bind running security group %s\n", sgname)
+            if  err := d.bindRunningSecurityGroup(sgname); err != nil {
+                return err
+            }
+        }
+        for _, sgname := range d.manifest.SecurityGroupSets.Staging {
+            fmt.Printf("bind staging security group %s\n", sgname)
+            if  err := d.bindStagingSecurityGroup(sgname); err != nil {
+                return err
+            }
+        }
+    }
+
 	for oname, org := range d.manifest.Organizations {
 		fmt.Printf("creating organization '%s'\n", oname)
 		if err := d.createOrg(oname); err != nil {
@@ -428,18 +551,28 @@ func (d *Deployer) Deploy() error {
 				return err
 			}
 		}
+
 		if org.Quota != "" {
 			fmt.Printf("  applying organization quota '%s'\n", org.Quota)
 			if err := d.setQuota(oname, org.Quota, false); err != nil {
 				return err
 			}
 		}
+
 		for sqname, squota := range org.Quotas {
 			fmt.Printf("  creating/updating space quota '%s'\n", sqname)
 			if err := d.createUpdateSpaceQuota(sqname, squota, oname); err != nil {
 				return err
 			}
 		}
+
+        for _, sgname := range org.SecurityGroups {
+            fmt.Printf("  bind organization security group %s\n", sgname)
+            if  err := d.bindOrgSecurityGroup(sgname, oname); err != nil {
+                return err
+            }
+        }
+
 		for uname, roles := range org.Users {
 			fmt.Printf("  granting org-level access to user '%s'\n", uname)
 			if err := d.createUser(uname); err != nil {
@@ -478,6 +611,13 @@ func (d *Deployer) Deploy() error {
 					return err
 				}
 			}
+
+            for _, sgname := range space.SecurityGroups {
+                fmt.Printf("    bind space security group %s\n", sgname)
+                if  err := d.bindSpaceSecurityGroup(sgname, oname, sname); err != nil {
+                    return err
+                }
+            }
 
 			for uname, roles := range space.Users {
 				fmt.Printf("    granting space-level access to user '%s'\n", uname)

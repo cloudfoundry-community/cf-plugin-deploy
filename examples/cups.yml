@@ -55,13 +55,40 @@ quotas:
     routes: 1000
     allow-paid-plans: true
 
+security_groups:
+  org-sg:
+    rules:
+    - destination: 10.0.0.1
+      protocol: all
+      log: true
+  space-sg:
+    rules:
+    - destination: 10.0.0.2
+      protocol: all
+    - destination: 10.0.0.2
+      protocol: icmp
+      code: -1
+      type: -1
+  global-sg:
+    rules:
+    - destination: 10.0.0.3
+      protocol: all
+
+security_group_sets:
+  staging:
+  - global-sg
+  running:
+  - global-sg
+
 organizations:
 
 # Development
-  sandbox:
+  cf-deploy-plugin-test-sandbox:
     .: (( inject meta.developer-org ))
     spaces:
       sandbox:
+        security-groups:
+        - space-sg
         user-provided-services:
         - name: test1
           credentials:
@@ -86,7 +113,9 @@ organizations:
            
         .: (( inject meta.developer-space ))
 # Operations
-  staging:
+  cf-deploy-plugin-test-staging:
+    security-groups:
+    - org-sg
     spaces:
       staging:
         users:

@@ -38,12 +38,13 @@ type User struct {
 }
 
 type Organization struct {
-	Users       map[string][]string `yaml:"users"`
-	Domains     []string            `yaml:"domains"`
-	Environment map[string]string   `yaml:"env"`
-	Spaces      map[string]*Space   `yaml:"spaces"`
-	Quota       string              `yaml:"quota"`
-	Quotas      map[string]*Quota   `yaml:"quotas"`
+	Users          map[string][]string `yaml:"users"`
+	Domains        []string            `yaml:"domains"`
+	Environment    map[string]string   `yaml:"env"`
+	Spaces         map[string]*Space   `yaml:"spaces"`
+	Quota          string              `yaml:"quota"`
+    Quotas         map[string]*Quota   `yaml:"quotas"`
+    SecurityGroups []string            `yaml:"security-groups"`
 }
 
 type Space struct {
@@ -55,6 +56,7 @@ type Space struct {
 	Quota                string                 `yaml:"quota"`
 	Applications         []*Application         `yaml:"apps"`
 	UserProvidedServices []*UserProvidedService `yaml:"user-provided-services"`
+    SecurityGroups       []string               `yaml:"security-groups"`
 }
 
 type Application struct {
@@ -87,10 +89,12 @@ type Quota struct {
 }
 
 type Manifest struct {
-	Domains       []string                 `yaml:"domains"`
-	Users         []User                   `yaml:"users"`
-	Quotas        map[string]*Quota        `yaml:"quotas"`
-	Organizations map[string]*Organization `yaml:"organizations"`
+	Domains           []string                  `yaml:"domains"`
+	Users             []User                    `yaml:"users"`
+	Quotas            map[string]*Quota         `yaml:"quotas"`
+	Organizations     map[string]*Organization  `yaml:"organizations"`
+    SecurityGroups    map[string]*SecurityGroup `yaml:"security_groups"`
+    SecurityGroupSets *SecurityGroupSet         `yaml:"security_group_sets"`
 }
 
 type UserProvidedService struct {
@@ -98,6 +102,16 @@ type UserProvidedService struct {
 	Credentials     interface{} `yaml:"credentials"`
 	RouteServiceUrl string      `yaml:"route_service_url"`
 	SyslogDrainUrl  string      `yaml:"syslog_drain_url"`
+}
+
+type SecurityGroup struct {
+	Rules             []interface{} `yaml:"rules"`
+	SecurityGroupFile string        `yaml:"security_group_file"`
+}
+
+type SecurityGroupSet struct {
+    Running []string `yaml:"running"`
+    Staging []string `yaml:"staging"`
 }
 
 func ParseManifest(src io.Reader) (Manifest, error) {
