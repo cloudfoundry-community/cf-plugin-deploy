@@ -87,8 +87,11 @@ organizations:
     .: (( inject meta.developer-org ))
     spaces:
       sandbox:
-        security-groups:
-        - space-sg
+        security_group_sets:
+          staging:
+          - space-sg
+          running:
+          - space-sg
         user-provided-services:
         - name: test1
           credentials:
@@ -114,8 +117,11 @@ organizations:
         .: (( inject meta.developer-space ))
 # Operations
   cf-deploy-plugin-test-staging:
-    security-groups:
-    - org-sg
+    security_group_sets:
+      staging:
+      - org-sg
+      running:
+      - org-sg
     spaces:
       staging:
         users:

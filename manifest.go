@@ -38,13 +38,13 @@ type User struct {
 }
 
 type Organization struct {
-	Users          map[string][]string `yaml:"users"`
-	Domains        []string            `yaml:"domains"`
-	Environment    map[string]string   `yaml:"env"`
-	Spaces         map[string]*Space   `yaml:"spaces"`
-	Quota          string              `yaml:"quota"`
-    Quotas         map[string]*Quota   `yaml:"quotas"`
-    SecurityGroups []string            `yaml:"security-groups"`
+	Users             map[string][]string `yaml:"users"`
+	Domains           []string            `yaml:"domains"`
+	Environment       map[string]string   `yaml:"env"`
+	Spaces            map[string]*Space   `yaml:"spaces"`
+	Quota             string              `yaml:"quota"`
+    Quotas            map[string]*Quota   `yaml:"quotas"`
+    SecurityGroupSets *SecurityGroupSet   `yaml:"security_group_sets"`
 }
 
 type Space struct {
@@ -56,7 +56,7 @@ type Space struct {
 	Quota                string                 `yaml:"quota"`
 	Applications         []*Application         `yaml:"apps"`
 	UserProvidedServices []*UserProvidedService `yaml:"user-provided-services"`
-    SecurityGroups       []string               `yaml:"security-groups"`
+    SecurityGroupSets    *SecurityGroupSet      `yaml:"security_group_sets"`
 }
 
 type Application struct {
