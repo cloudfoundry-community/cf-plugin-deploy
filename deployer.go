@@ -467,12 +467,15 @@ func (d *Deployer) bindStagingSecurityGroup(sgname string) error {
 	return d.run("bind-staging-security-group", sgname)
 }
 
-func (d *Deployer) bindOrgSecurityGroup(sgname, org  string) error {
-	return d.run("bind-security-group", sgname, org)
-}
-
-func (d *Deployer) bindSpaceSecurityGroup(sgname, org, space  string) error {
-	return d.run("bind-security-group", sgname, org, space)
+func (d *Deployer) bindSecurityGroup(sgname, org, space, lifecycle  string) error {
+    args := []string { "bind-security-group", sgname, org }
+    if space != "" {
+        args = append(args, space)
+    }
+    if lifecycle != "" {
+        args = append(args, "--lifecycle", lifecycle)
+    }
+	return d.run(args...)
 }
 
 func (d *Deployer) setQuota(name, quota string, space bool) error {
@@ -566,10 +569,20 @@ func (d *Deployer) Deploy() error {
 			}
 		}
 
-        for _, sgname := range org.SecurityGroups {
-            fmt.Printf("  bind organization security group %s\n", sgname)
-            if  err := d.bindOrgSecurityGroup(sgname, oname); err != nil {
-                return err
+        if org.SecurityGroupSets != nil {
+            lifecycle := "staging"
+            for _, sgname := range org.SecurityGroupSets.Staging {
+                fmt.Printf("bind organization staging security group %s\n", sgname)
+                if  err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
+                    return err
+                }
+            }
+            lifecycle = ""
+            for _, sgname := range org.SecurityGroupSets.Running {
+                fmt.Printf("bind organization running security group %s\n", sgname)
+                if  err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
+                    return err
+                }
             }
         }
 
@@ -585,6 +598,7 @@ func (d *Deployer) Deploy() error {
 				}
 			}
 		}
+
 		for sname, space := range org.Spaces {
 			fmt.Printf("  creating space '%s'\n", sname)
 			if err := d.createSpace(oname, sname); err != nil {
@@ -612,10 +626,20 @@ func (d *Deployer) Deploy() error {
 				}
 			}
 
-            for _, sgname := range space.SecurityGroups {
-                fmt.Printf("    bind space security group %s\n", sgname)
-                if  err := d.bindSpaceSecurityGroup(sgname, oname, sname); err != nil {
-                    return err
+            if space.SecurityGroupSets != nil {
+                lifecycle := "staging"
+                for _, sgname := range space.SecurityGroupSets.Staging {
+                    fmt.Printf("bind space staging security group %s\n", sgname)
+                    if  err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
+                        return err
+                    }
+                }
+                lifecycle = ""
+                for _, sgname := range space.SecurityGroupSets.Running {
+                    fmt.Printf("bind space running security group %s\n", sgname)
+                    if  err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
+                        return err
+                    }
                 }
             }
 
