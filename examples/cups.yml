@@ -74,7 +74,7 @@ security_groups:
     - destination: 10.0.0.3
       protocol: all
 
-security_groups_sets:
+security_group_sets:
   staging:
   - global-sg
   running:

@@ -94,7 +94,7 @@ type Manifest struct {
 	Quotas            map[string]*Quota         `yaml:"quotas"`
 	Organizations     map[string]*Organization  `yaml:"organizations"`
     SecurityGroups    map[string]*SecurityGroup `yaml:"security_groups"`
-    SecurityGroupSets *SecurityGroupSet         `yaml:"security_groups_sets"`
+    SecurityGroupSets *SecurityGroupSet         `yaml:"security_group_sets"`
 }
 
 type UserProvidedService struct {
