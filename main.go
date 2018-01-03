@@ -14,7 +14,7 @@ type Plugin struct{}
 func (p Plugin) Run(c plugin.CliConnection, args []string) {
 	m, err := ParseManifest(os.Stdin)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
+		fmt.Printf("Failed to parse manifest from standard input: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -23,7 +23,7 @@ func (p Plugin) Run(c plugin.CliConnection, args []string) {
 		cf:       c,
 	}
 	if err := d.Deploy(); err != nil {
-		fmt.Printf("ERROR: %s\n", err)
+		fmt.Printf("Deployment failed: %s\n", err)
 		os.Exit(1)
 	}
 }

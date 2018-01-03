@@ -405,6 +405,14 @@ func (d *Deployer) updateOrgQuota(qname string, quota *Quota) error {
 	return d.run(args...)
 }
 
+func (d *Deployer) setQuota(name, quota string, space bool) error {
+	cmd := "set-quota"
+	if space {
+		cmd = "set-space-quota"
+	}
+	return d.run(cmd, name, quota)
+}
+
 func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (sgFileName string, cleanup bool, err error) {
 	sgFileName = ""
 	cleanup = false
@@ -476,14 +484,6 @@ func (d *Deployer) bindSecurityGroup(sgname, org, space, lifecycle string) error
 		args = append(args, "--lifecycle", lifecycle)
 	}
 	return d.run(args...)
-}
-
-func (d *Deployer) setQuota(name, quota string, space bool) error {
-	cmd := "set-quota"
-	if space {
-		cmd = "set-space-quota"
-	}
-	return d.run(cmd, name, quota)
 }
 
 func (d *Deployer) Deploy() error {

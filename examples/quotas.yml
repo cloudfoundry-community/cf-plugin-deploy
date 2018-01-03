@@ -1,0 +1,31 @@
+---
+quotas:
+  small:
+    memory:
+      total: 1G
+  medium:
+    memory:
+      total: 8G
+  large:
+    memory:
+      total: 132G
+
+organizations:
+  FrobozzCo:
+    quota: large
+    quotas:
+      be-nice:
+        memory:
+          total: 1G
+        service-instances: 4
+      restricted:
+        memory:
+          total: 5mb
+
+    spaces:
+      Dev:
+        quota: be-nice
+      Prod: {}
+      QA:
+        quota: restricted # haha
+
