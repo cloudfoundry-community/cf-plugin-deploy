@@ -43,8 +43,8 @@ type Organization struct {
 	Environment       map[string]string   `yaml:"env"`
 	Spaces            map[string]*Space   `yaml:"spaces"`
 	Quota             string              `yaml:"quota"`
-    Quotas            map[string]*Quota   `yaml:"quotas"`
-    SecurityGroupSets *SecurityGroupSet   `yaml:"security_group_sets"`
+	Quotas            map[string]*Quota   `yaml:"quotas"`
+	SecurityGroupSets *SecurityGroupSet   `yaml:"security_group_sets"`
 }
 
 type Space struct {
@@ -56,7 +56,7 @@ type Space struct {
 	Quota                string                 `yaml:"quota"`
 	Applications         []*Application         `yaml:"apps"`
 	UserProvidedServices []*UserProvidedService `yaml:"user-provided-services"`
-    SecurityGroupSets    *SecurityGroupSet      `yaml:"security_group_sets"`
+	SecurityGroupSets    *SecurityGroupSet      `yaml:"security_group_sets"`
 }
 
 type Application struct {
@@ -93,8 +93,8 @@ type Manifest struct {
 	Users             []User                    `yaml:"users"`
 	Quotas            map[string]*Quota         `yaml:"quotas"`
 	Organizations     map[string]*Organization  `yaml:"organizations"`
-    SecurityGroups    map[string]*SecurityGroup `yaml:"security_groups"`
-    SecurityGroupSets *SecurityGroupSet         `yaml:"security_group_sets"`
+	SecurityGroups    map[string]*SecurityGroup `yaml:"security_groups"`
+	SecurityGroupSets *SecurityGroupSet         `yaml:"security_group_sets"`
 }
 
 type UserProvidedService struct {
@@ -110,8 +110,8 @@ type SecurityGroup struct {
 }
 
 type SecurityGroupSet struct {
-    Running []string `yaml:"running"`
-    Staging []string `yaml:"staging"`
+	Running []string `yaml:"running"`
+	Staging []string `yaml:"staging"`
 }
 
 func ParseManifest(src io.Reader) (Manifest, error) {

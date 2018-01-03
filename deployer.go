@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
-    "bytes"
 
 	"github.com/cloudfoundry/cli/plugin"
 )
@@ -42,7 +42,7 @@ func (d *Deployer) run(args ...string) error {
 	return err
 }
 
-func (d *Deployer) runWithOutput(args ...string) ([]string,error) {
+func (d *Deployer) runWithOutput(args ...string) ([]string, error) {
 	if os.Getenv("DEBUG") != "" {
 		fmt.Printf(">> %s\n", strings.Join(args, " "))
 	}
@@ -50,12 +50,12 @@ func (d *Deployer) runWithOutput(args ...string) ([]string,error) {
 		return nil, nil
 	}
 	result, err := d.cf.CliCommandWithoutTerminalOutput(args...)
-    if os.Getenv("DEBUG") != "" {
-        for _,l := range result {
-            fmt.Printf("%s\n", l)
-        }
-    }
-    return result, err
+	if os.Getenv("DEBUG") != "" {
+		for _, l := range result {
+			fmt.Printf("%s\n", l)
+		}
+	}
+	return result, err
 }
 
 func (d *Deployer) createUser(user string) error {
@@ -405,58 +405,58 @@ func (d *Deployer) updateOrgQuota(qname string, quota *Quota) error {
 	return d.run(args...)
 }
 
-func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (sgFileName string,cleanup bool,  err error) {
-    sgFileName = ""
-    cleanup = false
+func (d *Deployer) getSecurityGroupFile(sgname string, sgrule *SecurityGroup) (sgFileName string, cleanup bool, err error) {
+	sgFileName = ""
+	cleanup = false
 
-    if sgrule.SecurityGroupFile == "" {
-        rules := dynamicYamlHelper(sgrule.Rules)
-        var rulesJson []byte
-        rulesJson, err = json.Marshal(rules)
-        if err != nil {
-            return
-        }
-        var prettyJson bytes.Buffer
-        json.Indent(&prettyJson, rulesJson, "", "  ")
-        var fp *os.File
-        fp, err = ioutil.TempFile( "", sgname)
-        sgFileName = fp.Name()
-        cleanup = true
-        if err != nil {
-            return
-        }
-        _, err = fp.Write(prettyJson.Bytes())
-        if err != nil {
-            return
-        }
-        _, err = fp.WriteString("\n")
-        if err != nil {
-            return
-        }
-        fp.Close()
-        if os.Getenv("DEBUG") != "" {
-            fmt.Printf("security group rule %s\n%s\n", sgname, prettyJson.String())
-        }
-    } else {
-        sgFileName = sgrule.SecurityGroupFile
-    }
-    if os.Getenv("DEBUG") != "" {
-        fmt.Printf("security group %s file %s\n", sgname, sgFileName)
-    }
-    return
+	if sgrule.SecurityGroupFile == "" {
+		rules := dynamicYamlHelper(sgrule.Rules)
+		var rulesJson []byte
+		rulesJson, err = json.Marshal(rules)
+		if err != nil {
+			return
+		}
+		var prettyJson bytes.Buffer
+		json.Indent(&prettyJson, rulesJson, "", "  ")
+		var fp *os.File
+		fp, err = ioutil.TempFile("", sgname)
+		sgFileName = fp.Name()
+		cleanup = true
+		if err != nil {
+			return
+		}
+		_, err = fp.Write(prettyJson.Bytes())
+		if err != nil {
+			return
+		}
+		_, err = fp.WriteString("\n")
+		if err != nil {
+			return
+		}
+		fp.Close()
+		if os.Getenv("DEBUG") != "" {
+			fmt.Printf("security group rule %s\n%s\n", sgname, prettyJson.String())
+		}
+	} else {
+		sgFileName = sgrule.SecurityGroupFile
+	}
+	if os.Getenv("DEBUG") != "" {
+		fmt.Printf("security group %s file %s\n", sgname, sgFileName)
+	}
+	return
 }
 
 // TBD Do we need to more specific on testing existence by inspecting err?
 func (d *Deployer) testSecurityGroup(sgname string) error {
-    return d.run("security-group", sgname)
+	return d.run("security-group", sgname)
 }
 
 func (d *Deployer) createSecurityGroup(sgname, file string) error {
-    return d.run("create-security-group", sgname, file)
+	return d.run("create-security-group", sgname, file)
 }
 
 func (d *Deployer) updateSecurityGroup(sgname, file string) error {
-    return d.run("update-security-group", sgname, file)
+	return d.run("update-security-group", sgname, file)
 }
 
 func (d *Deployer) bindRunningSecurityGroup(sgname string) error {
@@ -467,14 +467,14 @@ func (d *Deployer) bindStagingSecurityGroup(sgname string) error {
 	return d.run("bind-staging-security-group", sgname)
 }
 
-func (d *Deployer) bindSecurityGroup(sgname, org, space, lifecycle  string) error {
-    args := []string { "bind-security-group", sgname, org }
-    if space != "" {
-        args = append(args, space)
-    }
-    if lifecycle != "" {
-        args = append(args, "--lifecycle", lifecycle)
-    }
+func (d *Deployer) bindSecurityGroup(sgname, org, space, lifecycle string) error {
+	args := []string{"bind-security-group", sgname, org}
+	if space != "" {
+		args = append(args, space)
+	}
+	if lifecycle != "" {
+		args = append(args, "--lifecycle", lifecycle)
+	}
 	return d.run(args...)
 }
 
@@ -506,41 +506,41 @@ func (d *Deployer) Deploy() error {
 		}
 	}
 
-    for sgname, sgrule := range d.manifest.SecurityGroups {
-        file, cleanup, err := d.getSecurityGroupFile(sgname, sgrule)
-        if err != nil {
-            return err
-        }
-        if err := d.testSecurityGroup(sgname); err != nil {
-            fmt.Printf("creating security group '%s'\n", sgname)
-            if  err := d.createSecurityGroup(sgname, file); err != nil {
-                return err
-            }
-        } else {
-            fmt.Printf("updating security group '%s'\n", sgname)
-            if  err := d.updateSecurityGroup(sgname, file); err != nil {
-                return err
-            }
-        }
-        if cleanup {
-            os.Remove(file)
-        }
-    }
+	for sgname, sgrule := range d.manifest.SecurityGroups {
+		file, cleanup, err := d.getSecurityGroupFile(sgname, sgrule)
+		if err != nil {
+			return err
+		}
+		if err := d.testSecurityGroup(sgname); err != nil {
+			fmt.Printf("creating security group '%s'\n", sgname)
+			if err := d.createSecurityGroup(sgname, file); err != nil {
+				return err
+			}
+		} else {
+			fmt.Printf("updating security group '%s'\n", sgname)
+			if err := d.updateSecurityGroup(sgname, file); err != nil {
+				return err
+			}
+		}
+		if cleanup {
+			os.Remove(file)
+		}
+	}
 
-    if d.manifest.SecurityGroupSets != nil {
-        for _, sgname := range d.manifest.SecurityGroupSets.Running {
-            fmt.Printf("bind running security group %s\n", sgname)
-            if  err := d.bindRunningSecurityGroup(sgname); err != nil {
-                return err
-            }
-        }
-        for _, sgname := range d.manifest.SecurityGroupSets.Staging {
-            fmt.Printf("bind staging security group %s\n", sgname)
-            if  err := d.bindStagingSecurityGroup(sgname); err != nil {
-                return err
-            }
-        }
-    }
+	if d.manifest.SecurityGroupSets != nil {
+		for _, sgname := range d.manifest.SecurityGroupSets.Running {
+			fmt.Printf("bind running security group %s\n", sgname)
+			if err := d.bindRunningSecurityGroup(sgname); err != nil {
+				return err
+			}
+		}
+		for _, sgname := range d.manifest.SecurityGroupSets.Staging {
+			fmt.Printf("bind staging security group %s\n", sgname)
+			if err := d.bindStagingSecurityGroup(sgname); err != nil {
+				return err
+			}
+		}
+	}
 
 	for oname, org := range d.manifest.Organizations {
 		fmt.Printf("creating organization '%s'\n", oname)
@@ -569,22 +569,22 @@ func (d *Deployer) Deploy() error {
 			}
 		}
 
-        if org.SecurityGroupSets != nil {
-            lifecycle := "staging"
-            for _, sgname := range org.SecurityGroupSets.Staging {
-                fmt.Printf("bind organization staging security group %s\n", sgname)
-                if  err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
-                    return err
-                }
-            }
-            lifecycle = ""
-            for _, sgname := range org.SecurityGroupSets.Running {
-                fmt.Printf("bind organization running security group %s\n", sgname)
-                if  err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
-                    return err
-                }
-            }
-        }
+		if org.SecurityGroupSets != nil {
+			lifecycle := "staging"
+			for _, sgname := range org.SecurityGroupSets.Staging {
+				fmt.Printf("bind organization staging security group %s\n", sgname)
+				if err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
+					return err
+				}
+			}
+			lifecycle = ""
+			for _, sgname := range org.SecurityGroupSets.Running {
+				fmt.Printf("bind organization running security group %s\n", sgname)
+				if err := d.bindSecurityGroup(sgname, oname, "", lifecycle); err != nil {
+					return err
+				}
+			}
+		}
 
 		for uname, roles := range org.Users {
 			fmt.Printf("  granting org-level access to user '%s'\n", uname)
@@ -626,22 +626,22 @@ func (d *Deployer) Deploy() error {
 				}
 			}
 
-            if space.SecurityGroupSets != nil {
-                lifecycle := "staging"
-                for _, sgname := range space.SecurityGroupSets.Staging {
-                    fmt.Printf("bind space staging security group %s\n", sgname)
-                    if  err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
-                        return err
-                    }
-                }
-                lifecycle = ""
-                for _, sgname := range space.SecurityGroupSets.Running {
-                    fmt.Printf("bind space running security group %s\n", sgname)
-                    if  err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
-                        return err
-                    }
-                }
-            }
+			if space.SecurityGroupSets != nil {
+				lifecycle := "staging"
+				for _, sgname := range space.SecurityGroupSets.Staging {
+					fmt.Printf("bind space staging security group %s\n", sgname)
+					if err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
+						return err
+					}
+				}
+				lifecycle = ""
+				for _, sgname := range space.SecurityGroupSets.Running {
+					fmt.Printf("bind space running security group %s\n", sgname)
+					if err := d.bindSecurityGroup(sgname, oname, sname, lifecycle); err != nil {
+						return err
+					}
+				}
+			}
 
 			for uname, roles := range space.Users {
 				fmt.Printf("    granting space-level access to user '%s'\n", uname)
